@@ -38,13 +38,18 @@ logfiles and print them out in a format similar (but not identical) to the outpu
 =cut
 
 use strict;
+use warnings;
 
 our $VERSION;
 $VERSION = '1.0';
 
-require Exporter;
-@ISA = qw(Exporter);
-@EXPORT = qw(SGEInit SGEReadRecord SGEPrintRecord SGEPrintAccountFiles);
+our (@ISA, @EXPORT);
+
+BEGIN {
+  require Exporter;
+  @ISA = qw(Exporter);
+  @EXPORT = qw(SGEInit SGEReadRecord SGEPrintRecord SGEPrintAccountFiles);
+}
 
 require IO::Uncompress::AnyUncompress;
 use POSIX qw(strftime);
