@@ -1,3 +1,0 @@
-package SGEtools::Parse;
-
-# Placeholder
