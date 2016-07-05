@@ -1,5 +1,5 @@
 
-This a repository for various tools to help analyse (Son of) Grid Engine
+This is a repository for various tools to help analyse (Son of) Grid Engine
 clusters.
 
 As of version 1.0, the primary tool is the SGEtools/Accounts.pm perl
