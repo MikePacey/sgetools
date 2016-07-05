@@ -1,0 +1,68 @@
+#!/usr/bin/perl
+
+use strict;
+use File::Basename qw(dirname);
+use Cwd  qw(abs_path);
+use lib (dirname abs_path $0);
+
+use Date::Manip;
+use SGEtools::Accounts;
+
+
+my %record;
+my %usage; # Builds usage summary
+my $corecount = 5500;
+my $totalcpuseconds;
+
+my ($start_date, $end_date); # User-selected summary window
+my $total;                   # Running total of cpu usage
+my $x;
+
+# Grab command line dates and convert to epoch
+
+if ($#ARGV != 1 && $#ARGV != 2) {
+   die "Usage: account start-time end-time\n";
+ }
+
+$start_date = &UnixDate ($ARGV[0], "%s");
+$end_date = &UnixDate ($ARGV[1], "%s");
+
+$totalcpuseconds = ($end_date - $start_date) * $corecount;
+
+print "Start date: $start_date End date: $end_date\n";
+
+SGEInit ("");
+
+while (%record = SGEReadRecord ()) {
+   # Record if any part of job crosses the summary's begin or end dates
+   if ($record{start_time} > 0 && $record{end_time} > 0 &&
+       $record{end_time} > $start_date && $record{start_time} < $end_date) {
+
+      # Truncate job time to find window
+       if ($record{start_time} < $start_date) {
+           $record{start_time} = $start_date;
+       }
+
+       if ($record{end_time} > $end_date) {
+           $record{end_time} = $end_date;
+       }
+
+      $usage{$record{owner}}{time} += $record{slots} * ($record{end_time}-$record{start_time});
+      $total += $record{slots} * ($record{end_time}-$record{start_time});
+      $usage{$record{owner}}{jobs}++;
+   }
+}
+
+# Print out usage stats
+
+printf "%15s %9s %6s %7s\n", "Name/Group", "CPU-days", "%age", "#jobs";
+
+print "---\n";
+
+foreach $x (sort {$usage{$b}{time} <=> $usage{$a}{time}} keys %usage) {
+   printf "%15s %9d %6.1f %7s\n", $x, $usage{$x}{time}/(60*60*24), 100*$usage{$x}{time}/($totalcpuseconds+0.01), $usage{$x}{jobs};
+}      
+
+print keys (%usage) . " total users.\n";
+
+printf "---\nTotal Usage: %d/%d days (%.2f%)\n", $total/(60*60*24), $totalcpuseconds/(60*60*24), 100*$total/($totalcpuseconds+0.01);
