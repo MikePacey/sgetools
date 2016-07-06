@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+use strict;
+#use warnings;
+
+use Data::Dumper;
+
+use File::Basename qw(dirname);
+use Cwd  qw(abs_path);
+use lib (dirname abs_path $0);
+use SGEtools::Parse;
+
+my $ref;
+my $x;
+my $queue;
+my $flag = 0;
+my $load;
+my $state;
+
+$ref = SGEqstatf ();
+
+#print Dumper ($ref);
+
+foreach $x ($ref->findnodes('/job_info/queue_info/Queue-List')) {
+   $state = $x->findvalue('./state');
+   if ($state =~ /[auAE]/) {
+         $queue = $x->findvalue('./name');
+         $queue =~ s/\..*//;
+         if (!$flag) {
+             printf ("%-20s %-5s %-5s\n\n", "Queue name", "Load", "State");
+             $flag = 1;
+         }
+         $load = $x->findvalue('./load_avg');
+         if (!($load =~ /[0-9]/)) {
+           $load = "-NA-";
+         }
+         printf ("%-20s %-5s %-5s\n", $queue, $load, $state);
+   }
+}

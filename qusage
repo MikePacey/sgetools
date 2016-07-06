@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+
+use strict;
+#use warnings;
+
+use Data::Dumper;
+
+use File::Basename qw(dirname);
+use Cwd  qw(abs_path);
+use lib (dirname abs_path $0);
+use SGEtools::Parse;
+
+my $ref;
+my $x;
+my $y;
+my %tally;
+my $total;
+my $name;
+my $size;
+
+$ref = SGEqstatustar ();
+
+# Tallyy per-user running job sizes
+
+foreach my $x ($ref->findnodes('/job_info/queue_info/job_list')) {
+   $name = $x->findvalue('./JB_owner');
+   $size = $x->findvalue('./slots');
+
+  $tally{$name}{sum} += $size;
+  $tally{$name}{size}{$size}++;
+}
+
+# Output usage list, largest user first
+
+printf "\n%15s %6s   Summary\n\n", "User", "Total";
+
+foreach $x (sort {$tally{$b}{sum} <=> $tally{$a}{sum}} keys %tally) {
+   $total += $tally{$x}{sum};
+   printf "%15s %6d : ", $x, $tally{$x}{sum};
+   foreach $y (sort {$a <=> $b} keys %{$tally{$x}{size}}) {
+     print "$tally{$x}{size}{$y}x$y ";
+   }
+   print "\n";
+} 
+
+printf "-----\n%8s %6d\n", "Total:", $total;
